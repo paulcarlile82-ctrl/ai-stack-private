@@ -1,0 +1,6 @@
+[Container]
+Image=localhost/llama-engine:cpu
+Pod=ai-stack.pod
+ContainerName=llama-container
+Volume=/home/paulo/maas-platform/models:/models:ro,Z
+Exec=/usr/local/bin/llama-server --host 0.0.0.0 --port 8080 --model /models/model.gguf

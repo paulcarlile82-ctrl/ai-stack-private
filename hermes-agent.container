@@ -1,0 +1,10 @@
+[Container]
+Image=docker.io/nousresearch/hermes-agent:latest
+Pod=ai-stack.pod
+ContainerName=hermes-agent
+Environment=LLM_ENDPOINT=http://localhost:8080
+# Use shell execution to find the binary automatically
+Exec=/bin/sh -c "while true; do sleep 3600; done"
+
+[Service]
+Restart=always
