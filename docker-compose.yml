@@ -1,0 +1,30 @@
+services:
+  llama-engine:
+    image: localhost/llama-engine:latest
+    container_name: llama-engine
+    restart: always
+    # Forces CPU mode to prevent libcuda errors
+    command: ["./llama-server", "--host", "0.0.0.0", "--port", "8080", "--n-gpu-layers", "0"]
+    networks:
+      - ai-bridge
+
+  hermes-agent:
+    image: docker.io/nousresearch/hermes-agent:latest
+    container_name: hermes-agent
+    restart: always
+    ports:
+      - "9119:9119"
+    environment:
+      - LLAMA_URL=http://llama-engine:8080
+      # Prevents auth-gate lockup
+      - HERMES_DASHBOARD_HOST=127.0.0.1
+    volumes:
+      - /home/paulo/hermes-data:/home/paulo/.hermes
+    depends_on:
+      - llama-engine
+    networks:
+      - ai-bridge
+
+networks:
+  ai-bridge:
+    driver: bridge

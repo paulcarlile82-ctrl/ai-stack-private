@@ -1,0 +1,12 @@
+[Container]
+ContainerName=hermes-agent
+Image=docker.io/nousresearch/hermes-agent:latest
+Pod=systemd-ai-stack
+Environment=LLM_ENDPOINT=http://localhost:8080
+Command=hermes dashboard
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
