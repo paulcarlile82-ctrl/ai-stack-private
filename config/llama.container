@@ -1,0 +1,13 @@
+[Container]
+Image=docker.io/yusiwen/llama.cpp:latest
+Name=llama-engine
+PublishPort=8080:8080
+Volume=/home/paulo/models:/models:Z
+Network=ai-bridge
+Exec=/llama.cpp/llama-server -m /models/model.gguf --host 0.0.0.0 --port 8080
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

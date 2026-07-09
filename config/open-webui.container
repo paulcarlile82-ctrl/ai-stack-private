@@ -1,0 +1,13 @@
+[Container]
+Image=ghcr.io/open-webui/open-webui:main
+Name=open-webui
+PublishPort=3000:8080
+Volume=open-webui:/app/backend/data:Z
+Network=ai-bridge
+Environment=OPENAI_API_BASE_URL=http://llama-engine:8080/v1
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
