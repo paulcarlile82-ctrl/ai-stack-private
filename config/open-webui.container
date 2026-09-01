@@ -1,9 +1,8 @@
 [Container]
 Image=ghcr.io/open-webui/open-webui:main
-PublishPort=3000:8080
+Pod=systemd-ai-stack
 Volume=open-webui:/app/backend/data:Z
-Network=ai-bridge
-Environment=OPENAI_API_BASE_URL=http://llama-engine:8080/v1
+Environment=OPENAI_API_BASE_URL=http://localhost:8080/v1
 
 [Service]
 Restart=always
