@@ -1,6 +1,5 @@
 [Container]
 Image=ghcr.io/open-webui/open-webui:main
-Name=open-webui
 PublishPort=3000:8080
 Volume=open-webui:/app/backend/data:Z
 Network=ai-bridge
