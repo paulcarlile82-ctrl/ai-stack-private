@@ -107,5 +107,5 @@ curl -s http://localhost:8080/v1/models | jq .
 Access centralized journald logs for debugging specific container subsystems:
 ```bash
 journalctl --user -u llama -f
-```  EOF
+
 
