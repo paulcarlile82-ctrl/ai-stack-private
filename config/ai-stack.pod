@@ -1,0 +1,9 @@
+[Pod]
+PodName=systemd-ai-stack
+PublishPort=9119:9119
+
+[Container]
+ContainerName=hermes-agent
+Image=docker.io/nousresearch/hermes-agent:latest
+Environment=LLM_ENDPOINT=http://localhost:8080
+Command=hermes dashboard

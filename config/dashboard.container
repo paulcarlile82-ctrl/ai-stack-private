@@ -1,0 +1,14 @@
+[Unit]
+Description=AI Stack Dashboard
+After=ai-stack-pod.service
+
+[Container]
+ContainerName=ai-dashboard
+Image=docker.io/library/nginx:latest
+Pod=systemd-ai-stack
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
