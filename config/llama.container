@@ -1,5 +1,6 @@
 [Container]
 Image=docker.io/yusiwen/llama.cpp:latest
+Name=llama-engine
 PublishPort=8080:8080
 Volume=%h/models:/models:Z
 Network=ai-bridge
