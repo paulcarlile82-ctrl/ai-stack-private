@@ -7,3 +7,4 @@ models/
 # Logs and temp files
 *.log
 .DS_Store
+*.swp
