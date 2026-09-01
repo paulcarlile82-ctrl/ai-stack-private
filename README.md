@@ -1,44 +1,118 @@
-AI Stack Deployment System
-Overview
+# AI Appliance Edge
 
-A robust, portable, and hardware-aware container orchestration framework designed for RHEL/Rocky Linux 9 environments. This project manages container lifecycles using Systemd Quadlet, ensuring high availability, clean system integration, and consistent performance across deployments.
-Design Philosophy
+A production-grade, air-gapped local AI appliance engineered for enterprise data sovereignty and robust on-premise execution. Designed for deployment across commodity enterprise hardware and decoupled bare-metal nodes.
 
-    Modularization: Separation of configuration (Quadlet) and automation (Bash scripts).
+---
 
-    Portability: Designed to run across different development environments using path-independent variables.
+## 1. Project Overview & Mission Statement
 
-    Resilience: Built-in hardware detection with automated fallback mechanisms for legacy GPU/CPU compatibility.
+Modern enterprise environments face a critical strategic tension: the immense productivity gains of Large Language Models versus the strict security, compliance, and latency mandates of localized data governance. Relying on external cloud APIs exposes proprietary data to third-party retention policies, legal compliance risks, and internet dependency.
 
-Evolution of the Architecture
+This project delivers an enterprise-grade, air-gapped local AI appliance. Moving past fragile single-node script experiments, this architecture establishes a secure, decoupled, multi-node "Metal-as-a-Service" (MaaS) framework. Powered by open-weights models (such as Llama and Gemma) and autonomous execution agents (Hermes), the entire pipeline operates completely isolated from external networks—guaranteeing total data sovereignty, zero telemetry leakage, and predictable hardware resource utilization.
 
-This project was developed alongside my RHCSA (EX200) studies, serving as a real-world testing ground for Linux systems administration principles.
+---
 
-The development process involved several key architectural pivots:
+## 2. Architecture & Tech Stack
 
-    Pod-Based Orchestration: Initially, the stack utilized Podman pods. During testing, I identified resource isolation and networking complexity issues that were impacting stability.
+The appliance is built upon a hardened Red Hat Enterprise Linux / Rocky Linux 9 foundation, leveraging enterprise-native tooling without proprietary container abstractions.
 
-    Architecture Shift: To increase maintainability, I transitioned to a direct Systemd-managed container model. This provided more granular control over container lifecycles and simplified the networking stack.
+### Core Technology Stack
+* **OS Foundation:** Rocky Linux 9 (Kernel 5.14+) utilizing rootless security boundaries.
+* **Container Runtime:** Podman (Rootless mode), eliminating the security vulnerabilities of a daemon-driven architecture.
+* **Service Orchestration:** Systemd Quadlets (`.container`, `.volume`), integrating container lifecycles directly into the host init system for native logging, dependency ordering, and auto-recovery.
+* **Inference Engine:** Ollama / llama.cpp optimized for local CPU/GPU compute execution.
+* **User Interface:** Open WebUI serving as the enterprise access gateway.
+* **Retrieval-Augmented Generation (RAG) & Memory Layer:** Vector databases integrated for stateful context retention and document parsing.
 
-    Network Resolution: I successfully navigated complex IPv4/IPv6 conflicts during the web-interface integration. By refining the networking configuration, I achieved stable, low-latency communication between the inference engine and the management gateway.
+### Distributed Multi-Node Topology
+To optimize performance across varying hardware profiles, the platform decouples compute-intensive workloads from retrieval and management nodes:
+* **Compute Node (e.g., HP ZBook / High-Performance Workstations):** Dedicated to high-throughput token generation, hardware-accelerated model serving (NVIDIA CUDA / ROCm runtimes), and core inference processing.
+* **Knowledge & Retrieval Node (e.g., Dell Latitude / Edge Servers):** Handles vector embeddings, document parsing, user-facing Open WebUI gateways, and agentic task orchestration. Communication across nodes is governed by explicit firewall zones and internal bridge interfaces.
 
-This journey highlights the reality of systems engineering: adapting the technology stack to meet the demands of the environment while maintaining security and stability.
-Key Components
+---
 
-    Quadlet Orchestration: Managed via systemd for seamless integration with the host OS.
+## 3. Installation & Deployment Guide
 
-    Hardware-Aware Automation: Logic to detect NVIDIA hardware and apply specific compute runtime configurations.
+These reproducible instructions allow any systems administrator to deploy the stack on a fresh Rocky Linux 9 instance.
 
-    Version Control: Full configuration history managed via Git to ensure auditability and deployment consistency.
+### Step 1: Clone the Repository
+```bash
+git clone [https://github.com/paulcarlile82-ctrl/ai-stack-deployment.git](https://github.com/paulcarlile82-ctrl/ai-stack-deployment.git)
+cd ai-stack-deployment
 
-Getting Started
+Step 2: Configure Environment Variables
 
-To deploy the stack on a new host:
+Copy the provided template and adapt the runtime configuration for your environment:
+Bash
 
-    Clone the repository.
+cp .env.template .env
+# Edit .env to adjust model parameters, ports, or binding addresses
 
-    Verify hardware compatibility:
-    ./scripts/check-hardware.sh
+Step 3: Set Up Persistent Storage & Quadlet Paths
 
-    Synchronize configurations and activate services:
-    ./scripts/deploy.sh
+To maintain absolute path portability across different user homes, systemd specifiers (%h) are utilized in all container volume definitions. Deploy the Quadlet files to the user systemd directory:
+Bash
+
+mkdir -p ~/.config/containers/systemd/
+cp config/*.container ~/.config/containers/systemd/
+
+Step 4: Reload Systemd & Start Services
+
+Instruct systemd to parse the new Quadlet files, generate the underlying service units, and start the appliance stack:
+Bash
+
+systemctl --user daemon-reload
+systemctl --user start llama open-webui ai-stack-hermes
+
+4. Troubleshooting & Operational Hurdles
+
+Engineering a production-ready container stack on enterprise Linux introduces unique operational hurdles. The following challenges were resolved during development:
+Rootless Container Naming and Systemd Scope Conflicts
+
+    Challenge: Running Podman in rootless mode alongside automatically generated systemd units occasionally created naming collisions between manual container IDs and systemd service scopes, resulting in failed unit activations.
+
+    Resolution: Standardized on explicit, declarative naming schemas inside Quadlet .container files (Name=llama-engine) and purged stale autogenerated .service files from version control to let systemd cleanly manage unit lifecycles from scratch.
+
+Resource Bottlenecks & VRAM/RAM Contention
+
+    Challenge: Running multiple heavy models concurrently (e.g., an inference engine alongside an autonomous agent framework) triggered out-of-memory (OOM) kills on constrained edge nodes.
+
+    Resolution: Implemented explicit resource constraints within systemd service drops and configured Ollama concurrency limits in the environment configuration, ensuring graceful degradation and preventing host kernel panic.
+
+Transitioning to Native Boot-Persistence
+
+    Challenge: Relying on interactive command-line startup scripts risked unhandled downtime following planned reboots or maintenance windows.
+
+    Resolution: Fully migrated away from ad-hoc scripts to native systemctl --user enable --now units paired with user linger (loginctl enable-linger), ensuring services start automatically at boot without requiring an active user login session.
+
+5. Verification & Health Checks
+
+Use the following native systemd and diagnostic commands to audit service health, resource consumption, and API responsiveness over localhost.
+Audit Systemd Service Status
+
+Verify that all Quadlet-managed units are active and running without errors:
+Bash
+
+systemctl --user status llama open-webui ai-stack-hermes
+
+Inspect Container Runtime Health
+
+Check live container resource usage, network bindings, and port mappings via Podman:
+Bash
+
+podman ps --format "table {{.Names}}\.Image}}\.Status}}\.Ports}}"
+
+Test Inference Engine API Responsiveness
+
+Query the local inference endpoint directly via localhost to confirm model readiness:
+Bash
+
+curl -s http://localhost:8080/v1/models | jq .
+
+Review Real-Time Service Logs
+
+Access centralized journald logs for debugging specific container subsystems:
+Bash
+
+journalctl --user -u llama -f
+
